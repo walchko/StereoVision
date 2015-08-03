@@ -48,7 +48,7 @@ class StereoPair(object):
     #: Window names for showing captured frame from each camera
     windows = ["{} camera".format(side) for side in ("Left", "Right")]
 
-    def __init__(self, devices):
+    def __init__(self, devices, img_size=(640,480)):
         """
         Initialize cameras.
 
@@ -56,6 +56,11 @@ class StereoPair(object):
         """
         #: Video captures associated with the ``StereoPair``
         self.captures = [cv2.VideoCapture(device) for device in devices]
+
+        # set image size
+        for i in range(2):
+            self.captures[i].set(3,img_size[0])
+            self.captures[i].set(4,img_size[1])
 
     def __enter__(self):
         return self
@@ -84,7 +89,7 @@ class StereoPair(object):
         """Show video from cameras."""
         while True:
             self.show_frames(1)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if cv2.waitKey(50) & 0xFF == ord('q'):
                 break
 
 

@@ -27,11 +27,33 @@ Classes:
 """
 
 import os
+import matplotlib.pyplot as plt
+import time
 
 import cv2
 
 import numpy as np
 from stereovision.exceptions import ChessboardNotFoundError
+
+class StereoViewer(object):
+    def __init__(self):
+        plt.rcParams['toolbar'] = 'None'
+        plt.figure(1)
+        plt.ion()
+
+    def draw(self,imgLeft,imgRight,delay=0.5):
+        plt.figure(1)
+        plt.subplot(1,2,1)
+        plt.imshow(imgLeft)
+        plt.title("Left Camera")
+
+        plt.subplot(1,2,2)
+        plt.imshow(imgRight)
+        plt.title("Right Camera")
+
+        plt.draw()
+        time.sleep(delay)
+        plt.clf()
 
 
 class StereoCalibration(object):
@@ -153,20 +175,11 @@ class StereoCalibrator(object):
                                                  (self.rows, self.columns))
         if not ret:
             raise ChessboardNotFoundError("No chessboard could be found.")
+
         cv2.cornerSubPix(temp, corners, (11, 11), (-1, -1),
                          (cv2.TERM_CRITERIA_MAX_ITER + cv2.TERM_CRITERIA_EPS,
                           30, 0.01))
         return corners
-
-    def _show_corners(self, image, corners):
-        """Show chessboard corners found in image."""
-        temp = image
-        cv2.drawChessboardCorners(temp, (self.rows, self.columns), corners,
-                                  True)
-        window_name = "Chessboard"
-        cv2.imshow(window_name, temp)
-        if cv2.waitKey(0):
-            cv2.destroyWindow(window_name)
 
     def __init__(self, rows, columns, square_size, image_size):
         """
@@ -205,15 +218,38 @@ class StereoCalibrator(object):
         The image pair should be an iterable composed of two CvMats ordered
         (left, right).
         """
-        side = "left"
-        self.object_points.append(self.corner_coordinates)
+        # self.object_points.append(self.corner_coordinates)
+        found_image_pts = False
+        i = 1
+        side = [' ','left','right']
+        images = []
+        if show_results:
+            figure = StereoViewer()
+
         for image in image_pair:
-            corners = self._get_corners(image)
+            try:
+                corners = self._get_corners(image)
+                if show_results:
+                    cv2.drawChessboardCorners(image, (self.rows, self.columns), corners,
+                                              True)
+                self.image_points[side[i]].append(corners.reshape(-1, 2))
+                found_image_pts = True
+                self.image_count += 1
+            except ChessboardNotFoundError:
+                # print 'No chessboard found'
+                pass
+
             if show_results:
-                self._show_corners(image, corners)
-            self.image_points[side].append(corners.reshape(-1, 2))
-            side = "right"
-            self.image_count += 1
+                images.append(image)
+
+
+            i+=1
+
+        if show_results:
+            figure.draw(images[0],images[1])
+        # self.image_count += 1
+        if found_image_pts: self.object_points.append(self.corner_coordinates)
+        # print 'Found %d good images with chessboards'%(self.image_count)
 
     def calibrate_cameras(self):
         """Calibrate cameras based on found chessboard corners."""
@@ -222,15 +258,26 @@ class StereoCalibrator(object):
         flags = (cv2.CALIB_FIX_ASPECT_RATIO + cv2.CALIB_ZERO_TANGENT_DIST +
                  cv2.CALIB_SAME_FOCAL_LENGTH)
         calib = StereoCalibration()
-        (calib.cam_mats["left"], calib.dist_coefs["left"],
-         calib.cam_mats["right"], calib.dist_coefs["right"],
-         calib.rot_mat, calib.trans_vec, calib.e_mat,
-         calib.f_mat) = cv2.stereoCalibrate(self.object_points,
-                                            self.image_points["left"],
-                                            self.image_points["right"],
-                                            self.image_size,
-                                            criteria=criteria,
-                                            flags=flags)[1:]
+
+        print 'stereoCalibrate',len(self.object_points),len(self.image_points["left"]),len(self.image_points["right"])
+        try:
+            (calib.cam_mats["left"], calib.dist_coefs["left"],
+             calib.cam_mats["right"], calib.dist_coefs["right"],
+             calib.rot_mat, calib.trans_vec, calib.e_mat,
+             calib.f_mat) = cv2.stereoCalibrate(self.object_points,
+                                                self.image_points["left"],
+                                                self.image_points["right"],
+                                                calib.cam_mats["left"],
+                                                calib.dist_coefs["left"],
+                                                calib.cam_mats["right"],
+                                                calib.dist_coefs["right"],
+                                                self.image_size,
+                                                criteria=criteria,
+                                                flags=flags)[1:]
+        except:
+            return calib
+
+        print 'stereoRectify'
         (calib.rect_trans["left"], calib.rect_trans["right"],
          calib.proj_mats["left"], calib.proj_mats["right"],
          calib.disp_to_depth_mat, calib.valid_boxes["left"],

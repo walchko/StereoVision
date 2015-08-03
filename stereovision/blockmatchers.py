@@ -114,7 +114,8 @@ class StereoBM(BlockMatcher):
 
     parameter_maxima = {"search_range": None,
                        "window_size": 255,
-                       "stereo_bm_preset": cv2.STEREO_BM_NARROW_PRESET}
+                       "stereo_bm_preset": cv2.StereoBM_PREFILTER_NORMALIZED_RESPONSE }
+#                       "stereo_bm_preset": cv2.STEREO_BM_NARROW_PRESET}
 
     @property
     def search_range(self):
@@ -172,6 +173,7 @@ class StereoBM(BlockMatcher):
                                           ndisparities=self._search_range,
                                           SADWindowSize=self._window_size)
 
+#    def __init__(self, stereo_bm_preset=cv2.STEREO_BM_BASIC_PRESET,
     def __init__(self, stereo_bm_preset=cv2.STEREO_BM_BASIC_PRESET,
                  search_range=80,
                  window_size=21,

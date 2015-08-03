@@ -65,12 +65,31 @@ STEREO_BM_FLAG.add_argument("--use_stereobm", help="Use StereoBM rather than "
 
 def find_files(folder):
     """Discover stereo photos and return them as a pairwise sorted list."""
-    files = [i for i in os.listdir(folder) if i.startswith("left")]
-    files.sort()
-    for i in range(len(files)):
-        insert_string = "right{}".format(files[i * 2][4:])
-        files.insert(i * 2 + 1, insert_string)
-    files = [os.path.join(folder, filename) for filename in files]
+    # files = [i for i in os.listdir(folder) if i.lower().startswith("left")]
+    # files.sort()
+    # for i in range(len(files)):
+    #     insert_string = "Right{}".format(files[i * 2][4:])
+    #     files.insert(i * 2 + 1, insert_string)
+    # files = [os.path.join(folder, filename) for filename in files]
+    # print files
+    # return files
+    file_list = os.listdir(folder)
+    right = [i for i in file_list if i.lower().startswith("right")]
+    left = [i for i in file_list if i.lower().startswith("left")]
+    # for filename in file_list:
+    #     if filename.lower().startswith('right'): right.append(filename)
+    #     elif filename.lower().startswith('left'): left.append(filename)
+    right.sort()
+    left.sort()
+
+    files = []
+    
+    if len(right) == len(left):
+        for i in range(0,len(right)):
+            files.append(os.path.join(folder, left[i]))
+            files.append(os.path.join(folder, right[i]))
+
+    # print files
     return files
 
 
@@ -106,8 +125,10 @@ def calibrate_folder(args):
         progress.update(progress.maxval - len(args.input_files))
 
     progress.finish()
+    print 'Found %d good images with markers'%(calibrator.image_count)
     print("Calibrating cameras. This can take a while.")
     calibration = calibrator.calibrate_cameras()
+    print calibration
     avg_error = calibrator.check_calibration(calibration)
     print("The average error between chessboard points and their epipolar "
           "lines is \n"
