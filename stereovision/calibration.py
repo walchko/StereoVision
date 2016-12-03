@@ -27,7 +27,6 @@ Classes:
 """
 
 import os
-import matplotlib.pyplot as plt
 import time
 
 import cv2
@@ -36,24 +35,13 @@ import numpy as np
 from stereovision.exceptions import ChessboardNotFoundError
 
 class StereoViewer(object):
-    def __init__(self):
-        plt.rcParams['toolbar'] = 'None'
-        plt.figure(1)
-        plt.ion()
+    # def __init__(self):
+    #     a=1
 
-    def draw(self,imgLeft,imgRight,delay=0.5):
-        plt.figure(1)
-        plt.subplot(1,2,1)
-        plt.imshow(imgLeft)
-        plt.title("Left Camera")
-
-        plt.subplot(1,2,2)
-        plt.imshow(imgRight)
-        plt.title("Right Camera")
-
-        plt.draw()
-        time.sleep(delay)
-        plt.clf()
+    def draw(self,imgLeft,imgRight,delay=500):
+        img = np.concatenate((imgLeft,imgRight),axis=1)
+        cv2.imshow('left/right',img)
+        cv2.waitKey(delay)
 
 
 class StereoCalibration(object):
@@ -300,12 +288,12 @@ class StereoCalibrator(object):
                                                         cv2.CV_32FC1)
         # This is replaced because my results were always bad. Estimates are
         # taken from the OpenCV samples.
-        width, height = self.image_size
-        focal_length = 0.8 * width
-        calib.disp_to_depth_mat = np.float32([[1, 0, 0, -0.5 * width],
-                                              [0, -1, 0, 0.5 * height],
-                                              [0, 0, 0, -focal_length],
-                                              [0, 0, 1, 0]])
+        # width, height = self.image_size
+        # focal_length = 0.8 * width
+        # calib.disp_to_depth_mat = np.float32([[1, 0, 0, -0.5 * width],
+        #                                       [0, -1, 0, 0.5 * height],
+        #                                       [0, 0, 0, -focal_length],
+        #                                       [0, 0, 1, 0]])
         return calib
 
     def check_calibration(self, calibration):
